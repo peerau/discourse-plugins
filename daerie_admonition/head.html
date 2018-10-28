@@ -1,0 +1,13 @@
+<script type="text/discourse-plugin" version="0.8.24">
+    // admonition info block
+    api.decorateCooked($cooked => $cooked.find('blockquote > p strong:contains("info")').each(function(){
+        $(this).closest('blockquote').attr('data-admonition', 'info');
+        $(this).text($(this).text().replace(/info : /gi, ''));
+    }));
+
+// admonition warning block
+api.decorateCooked($cooked => $cooked.find('blockquote > p strong:contains("warning")').each(function(){
+    $(this).closest('blockquote').attr('data-admonition', 'warning');
+    $(this).text($(this).text().replace(/warning : /gi, ''));
+}));
+</script>

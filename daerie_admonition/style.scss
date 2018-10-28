@@ -1,0 +1,57 @@
+/*
+ * Blockquote Admonition Hook
+ */
+.cooked blockquote[data-admonition="info"] p:first-child,
+.d-editor-preview blockquote[data-admonition="info"] p:first-child,
+.cooked blockquote[data-admonition="warning"] p:first-child,
+.d-editor-preview blockquote[data-admonition="warning"] p:first-child {
+    padding-bottom: 12px;
+    border-bottom: solid 1px;
+}
+
+.cooked blockquote[data-admonition="info"] p:first-child::before,
+.d-editor-preview blockquote[data-admonition="info"] p:first-child::before,
+.cooked blockquote[data-admonition="warning"] p:first-child::before,
+.d-editor-preview blockquote[data-admonition="warning"] p:first-child::before {
+    font: normal normal normal 1.5em/1 FontAwesome;
+    margin-right: 10px;
+}
+
+.cooked blockquote[data-admonition="info"] p:first-child strong,
+.d-editor-preview blockquote[data-admonition="info"] p:first-child strong,
+.cooked blockquote[data-admonition="warning"] p:first-child strong,
+.d-editor-preview blockquote[data-admonition="warning"] p:first-child strong {
+    text-transform: uppercase;
+}
+
+.cooked blockquote[data-admonition="info"], .d-editor-preview blockquote[data-admonition="info"] {
+    border-color: $tertiary;
+}
+
+.cooked blockquote[data-admonition="info"] p:first-child,
+.cooked blockquote[data-admonition="info"] p:first-child strong,
+.d-editor-preview blockquote[data-admonition="info"] p:first-child,
+.d-editor-preview blockquote[data-admonition="info"] p:first-child strong {
+    color: $tertiary;
+}
+
+.cooked blockquote[data-admonition="info"] p:first-child::before,
+.d-editor-preview blockquote[data-admonition="info"] p:first-child::before {
+    content: "\f05a";
+}
+
+.cooked blockquote[data-admonition="warning"], .d-editor-preview blockquote[data-admonition="warning"] {
+    border-color: $danger;
+}
+
+.cooked blockquote[data-admonition="warning"] p:first-child,
+.cooked blockquote[data-admonition="warning"] p:first-child strong,
+.d-editor-preview blockquote[data-admonition="warning"] p:first-child,
+.d-editor-preview blockquote[data-admonition="warning"] p:first-child strong {
+    color: $danger;
+}
+
+.cooked blockquote[data-admonition="warning"] p:first-child::before,
+.d-editor-preview blockquote[data-admonition="warning"] p:first-child::before {
+    content: "\f071";
+}
