@@ -1,50 +1,120 @@
-<script type="text/javascript" src="https://cf.eve-oj.com/js/EVEoj-0.3.x.min.js"></script>
+<script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
 <script type="text/javascript">
-    var SDEVer = 201611140,
-        SDD = EVEoj.SDD.Create('json', {'path': 'https://cf.eve-oj.com/sdd/' + SDEVer});
+    const EVE_ONLINE_SDE_CDN = 'https://sde.zzeve.com';
+
+    // instanciate a new database
+    var db = new Dexie('eveonline_sde');
+
+    // define the Eve Online SDE structure
+    db.version(1).stores({
+        meta: 'table',                   // this will allow us to refresh data when needed
+        invTypes: 'typeID, typeName',    // typeID is primary key, typeName will be used for search based on link
+        dgmAttributeTypes: 'attributeID' // attributeID is primary key
+    });
+
+    seedEveOnlineSDEDatabase('invTypes');
+    seedEveOnlineSDEDatabase('dgmAttributeTypes');
+
+    function seedEveOnlineSDEDatabase(tableName)
+    {
+        // attempt to retrieve meta information regarding tableName
+        db.meta.get(tableName, function(meta) {
+            // in case there is no result, insert a new entry into the database
+            if (meta === null || meta === undefined) {
+                meta = {
+                    table: tableName,
+                    etag: "",
+                    lastModified: new Date('1970-01-01T00:00:01')
+                };
+
+                return db.meta.add(meta);
+            }
+
+            $.ajax({
+                dataType: 'json',
+                headers: {
+                    //'If-None-Match': meta.etag
+                    //'If-Modified-Since': meta.lastModified.toGMTString()
+                },
+                method: 'GET',
+                url: EVE_ONLINE_SDE_CDN + '/' + tableName + '.json'
+            }).done(function(data, textStatus, jqXHR) {
+                if (meta.etag !== jqXHR.getResponseHeader('ETag')) {
+                    console.warn('refreshing data for ' + tableName);
+
+                    // emptying tableName in order to reload updated information
+                    db[tableName].clear();
+
+                    // seeding tableName with updated information
+                    if (data.length > 0) db[tableName].bulkAdd(data);
+
+                    // update metadata related to tableName
+                    db.meta.update(tableName, {
+                        etag: jqXHR.getResponseHeader('ETag'),
+                        lastModified: jqXHR.getResponseHeader('Last-Modified')
+                    }).catch(function (err) {
+                        console.error(err);
+                    });
+                }
+            });
+        });
+    }
 </script>
 <script type="text/x-handlebars" data-template-name="modal/eve-sde-modal">
     {{#d-modal-body title="eve_sde_modal_title" class="eve-sde-modal"}}
     <p data-typeid="{{ model.type_id }}">{{{ model.description }}}</p>
-    {{#if model.attributes.shield }}
-    <h4>Shield</h4>
+    {{#if model.attributes.shield or model.attributes.armor or model.attributes.hull }}
     <table>
+        <thead>
+            <tr>
+                <th colspan="4">
+                    <h3>Resistances</h3>
+                </th>
+            </tr>
+        </thead>
         <tbody>
+            {{#if model.attributes.shield }}
+            <tr>
+                <td colspan="4">
+                    <h4>Shield</h4>
+                </td>
+            </tr>
             <tr>
                 {{#each model.attributes.shield as |attribute|}}
                 <td>
-                    <img src="{{ attribute.img.src }}" alt="{{ attribute.img.alt }}" /> {{ attribute.value }}
+                    <img src="{{ attribute.img.src }}" alt="{{ attribute.img.alt }}" /> {{ attribute.percent }}
                 </td>
                 {{/each}}
             </tr>
-        </tbody>
-    </table>
-    {{/if}}
-    {{#if model.attributes.shield }}
-    <h4>Armor</h4>
-    <table>
-        <tbody>
+            {{/if}}
+            {{#if model.attributes.armor }}
+            <tr>
+                <td colspan="4">
+                    <h4>Armor</h4>
+                </td>
+            </tr>
             <tr>
                 {{#each model.attributes.armor as |attribute|}}
                 <td>
-                    <img src="{{ attribute.img.src }}" alt="{{ attribute.img.alt }}" /> {{ attribute.value }}
+                    <img src="{{ attribute.img.src }}" alt="{{ attribute.img.alt }}" /> {{ attribute.percent }}
                 </td>
                 {{/each}}
             </tr>
-        </tbody>
-    </table>
-    {{/if}}
-    {{#if model.attributes.shield }}
-    <h4>Hull</h4>
-    <table>
-        <tbody>
+            {{/if}}
+            {{#if model.attributes.hull }}
+            <tr>
+                <td colspan="4">
+                    <h4>Hull</h4>
+                </td>
+            </tr>
             <tr>
                 {{#each model.attributes.hull as |attribute|}}
                 <td>
-                    <img src="{{ attribute.img.src }}" alt="{{ attribute.img.alt }}" /> {{ attribute.value }}
+                    <img src="{{ attribute.img.src }}" alt="{{ attribute.img.alt }}" /> {{ attribute.percent }}
                 </td>
                 {{/each}}
             </tr>
+            {{/if}}
         </tbody>
     </table>
     {{/if}}
@@ -56,7 +126,134 @@
     const showModal = require('discourse/lib/show-modal').default;
     let currentLocale = I18n.currentLocale();
 
+    function showEveOnlineSDEModal()
+    {
+        var typeID  = $(this).attr('data-typeid');
+        var typeUri = ESI_BASE_URI + '/latest/universe/types/' + typeID + '/';
+
+        if (typeID === null || typeID === undefined) {
+            console.warn('The item does not have any typeID attribute.');
+            return;
+        }
+
+        $.ajax({
+            data : {
+                language: 'fr'
+            },
+            dataType: 'json',
+            headers: {
+                'Accept-Language': 'fr',
+                'X-User-Agent': 'discourse/1.0.0 (Warlof Tutsimo - Daerie Inc. - Get Off My Lawn)'
+            },
+            type: 'GET',
+            url: typeUri
+        }).done(function(data) {
+            var sdeModel = {
+                'type_id': 0,
+                'description': '',
+                'attributes': {
+                    'shield': [],
+                    'armor': [],
+                    'hull': []
+                }
+            };
+
+            var resistsAttributesID = [];
+            var resistsAttributes = [];
+
+            I18n.translations[currentLocale].js.eve_sde_modal_title = data.name;
+            sdeModel.type_id = typeID;
+            sdeModel.description = data.description
+                .replace(/\r\n/gi, '<br/>')
+                .replace(/\n\n/gi, '<br/>')
+                .replace(/\n/gi, '<br/>')
+                .replace(/<color='0xff([a-f0-9]{6})'>([a-z0-9,.']+)<\/color>/gmi, function(match, p1, p2, offset, string) {
+                    return `<span style="color: #${p1};">${p2}</span>`;
+                })
+                .replace(/<a href=showinfo:([0-9]+)>([éèàçù \w]+)<\/a>/gmi, function(match, p1, p2, offset, string) {
+                    return p2;
+                });
+
+            $.each(data.dogma_attributes, function(i, dgmAttribute) {
+                if (RESISTS.indexOf(dgmAttribute.attribute_id) >= 0) {
+                    resistsAttributes.push(dgmAttribute);
+                    resistsAttributesID.push(dgmAttribute.attribute_id);
+                }
+            });
+
+            db.dgmAttributeTypes.where('attributeID').anyOf(resistsAttributesID).toArray().then(function (dgmAttributeTypes) {
+                if (dgmAttributeTypes === null || dgmAttributeTypes === undefined)
+                    return;
+
+                $.each(dgmAttributeTypes, function(i, dgmAttributeType) {
+                    $.each(resistsAttributes, function(j, resistAttribute) {
+                        if (resistAttribute.attribute_id === dgmAttributeType.attributeID) {
+                            var attribute = {
+                                'id': 0,
+                                'name': '',
+                                'value': '',
+                                'percent': 0,
+                                'img': {
+                                    'alt': '',
+                                    'src': ''
+                                }
+                            };
+
+                            switch (dgmAttributeType.iconID) {
+                                case 1393:
+                                    attribute.img.src = 'https://forums.clandaerie.com/uploads/default/original/1X/a948a8f3d0ac5a1628c110071aceef976db0fae5.png';
+                                    break;
+                                case 1394:
+                                    attribute.img.src = 'https://forums.clandaerie.com/uploads/default/original/1X/4d8ef4c39d6baa27845ff8931c63fc4c08cc7bbb.png';
+                                    break;
+                                case 1395:
+                                    attribute.img.src = 'https://forums.clandaerie.com/uploads/default/original/1X/281dbfadd89530cc1142a4b93fdc7ada671297eb.png';
+                                    break;
+                                case 1396:
+                                    attribute.img.src = 'https://forums.clandaerie.com/uploads/default/original/1X/b3f1e97f6144ec32c601294bfe2a2abc7cd9adfd.png';
+                                    break;
+                            }
+
+                            attribute.id = dgmAttributeType.attributeID;
+                            attribute.name = dgmAttributeType.displayName;
+                            attribute.value = resistAttribute.value;
+                            attribute.percent = Math.round((1 - attribute.value) * 100);
+                            attribute.img.alt = attribute.name.replace(/Armor|Shield|Structure/gi, '').trim();
+
+                            switch (dgmAttributeType.categoryID) {
+                                // Shield
+                                case 2:
+                                    sdeModel.attributes.shield.push(attribute);
+                                    break;
+                                // Armor
+                                case 3:
+                                    sdeModel.attributes.armor.push(attribute);
+                                    break;
+                                // Structure
+                                case 4:
+                                    sdeModel.attributes.hull.push(attribute);
+                                    break;
+                            }
+                        }
+                    });
+                });
+            })
+            .then(function () {
+                showModal('eveSdeModal', {
+                    'model': sdeModel
+                });
+            })
+            .catch(function(err) {
+                console.error(err);
+            });
+        });
+    }
+
+    //
     // EvE Online Magic SDE
+    //
+
+    // append an icon near the modal title if it's an EvE Online SDE modal
     api.onAppEvent('modal:body-shown', msg => {
         if (msg.title !== 'eve_sde_modal_title')
             return;
@@ -70,129 +267,20 @@
     });
 
     api.decorateCooked(function(cooked) {
-        SDD.LoadMeta()
-            .then(function(arg) {
-                return arg.source.GetTable('invTypes').Load();
-            })
-            .then(function(arg) {
-                cooked.find('a[href="#evesde"]').each(function() {
-                    var typeName = $(this).text();
-                    results = _.filter(arg.table.data, function(entry) {
-                        return entry[arg.table.c.typeName] === typeName;
-                    });
+        // retrieving all link targetting EvE Online SDE
+        cooked.find('a[href="#evesde"]').each(function(index, sdeLink) {
+            // attempt to identifying the item and add its ID as data attribute
+            db.invTypes.where({'typeName': $(sdeLink).text()}).first(function (invType) {
+                if (invType === null || invType === undefined) {
+                    console.warn('The is no match for this link');
+                    return;
+                }
 
-                    if (results.length > 0) {
-                        $(this).attr('data-typeid', results[0][arg.table.c.typeID]);
-                        $(this).on('click', function() {
-                            var typeID  = $(this).attr('data-typeid');
-                            var typeUri = ESI_BASE_URI + '/latest/universe/types/' + typeID + '/';
-
-                            $.ajax({
-                                data : {
-                                    language: 'fr'
-                                },
-                                dataType: 'json',
-                                headers: {
-                                    'Accept-Language': 'fr',
-                                    'X-User-Agent': 'discourse/1.0.0 (Warlof Tutsimo - Daerie Inc. - Get Off My Lawn)'
-                                },
-                                type: 'GET',
-                                url: typeUri
-                            }).done(function(data) {
-                                SDD.LoadMeta()
-                                    .then(function(arg) {
-                                        return arg.source.GetTable('dgmAttributeTypes').Load();
-                                    })
-                                    .then(function(arg) {
-                                        var sdeModel = {
-                                            'type_id': 0,
-                                            'description': '',
-                                            'attributes': {
-                                                'shield': [],
-                                                'armor': [],
-                                                'hull': []
-                                            }
-                                        };
-
-                                        _.each(data.dogma_attributes, function(dgmAttribute) {
-                                            if (RESISTS.indexOf(dgmAttribute.attribute_id) >= 0) {
-                                                results = _.filter(arg.table.data, function(entry) {
-                                                    return entry[arg.table.c.attributeID] === dgmAttribute.attribute_id;
-                                                });
-
-                                                if (results.length > 0) {
-                                                    var attribute = {
-                                                        'id': 0,
-                                                        'name': '',
-                                                        'value': '',
-                                                        'percent': 0,
-                                                        'img': {
-                                                            'alt': '',
-                                                            'src': ''
-                                                        }
-                                                    };
-
-                                                    switch (results[0][arg.table.c.iconID]) {
-                                                        case 1393:
-                                                            attribute.img.src = 'https://forums.clandaerie.com/uploads/default/original/1X/a948a8f3d0ac5a1628c110071aceef976db0fae5.png';
-                                                            break;
-                                                        case 1394:
-                                                            attribute.img.src = 'https://forums.clandaerie.com/uploads/default/original/1X/4d8ef4c39d6baa27845ff8931c63fc4c08cc7bbb.png';
-                                                            break;
-                                                        case 1395:
-                                                            attribute.img.src = 'https://forums.clandaerie.com/uploads/default/original/1X/281dbfadd89530cc1142a4b93fdc7ada671297eb.png';
-                                                            break;
-                                                        case 1396:
-                                                            attribute.img.src = 'https://forums.clandaerie.com/uploads/default/original/1X/b3f1e97f6144ec32c601294bfe2a2abc7cd9adfd.png';
-                                                            break;
-                                                    }
-
-                                                    attribute.id = dgmAttribute.attribute_id;
-                                                    attribute.name = results[0][arg.table.c.displayName];
-                                                    attribute.value = dgmAttribute.value;
-                                                    attribute.percent = Math.round((1 - attribute.value) * 100);
-                                                    attribute.img.alt = attribute.name.replace(/Armor|Shield|Structure/gi, '').trim();
-
-                                                    switch (results[0][arg.table.c.categoryID]) {
-                                                        // Shield
-                                                        case 2:
-                                                            sdeModel.attributes.shield.push(attribute);
-                                                            break;
-                                                        // Armor
-                                                        case 3:
-                                                            sdeModel.attributes.armor.push(attribute);
-                                                            break;
-                                                        // Structure
-                                                        case 4:
-                                                            sdeModel.attributes.hull.push(attribute);
-                                                            break;
-                                                    }
-                                                }
-                                            }
-                                        });
-
-                                        sdeModel.type_id = typeID;
-                                        sdeModel.description = data.description
-                                            .replace(/\r\n/gi, '<br/>')
-                                            .replace(/\n\n/gi, '<br/>')
-                                            .replace(/\n/gi, '<br/>')
-                                            .replace(/<color='0xff([a-f0-9]{6})'>([a-z0-9,.']+)<\/color>/gmi, function(match, p1, p2, offset, string) {
-                                                return `<span style="color: #${p1};">${p2}</span>`;
-                                            })
-                                            .replace(/<a href=showinfo:([0-9]+)>([éèàçù \w]+)<\/a>/gmi, function(match, p1, p2, offset, string) {
-                                                return p2;
-                                            });
-
-                                        I18n.translations[currentLocale].js.eve_sde_modal_title = data.name;
-
-                                        showModal('eveSdeModal', {
-                                            'model': sdeModel
-                                        });
-                                    });
-                            });
-                        });
-                    }
-                });
+                $('a[href="#evesde"]:contains(' + invType.typeName + ')').attr('data-typeid', invType.typeID);
+                $('a[href="#evesde"]:contains(' + invType.typeName + ')').on('click', showEveOnlineSDEModal);
+            }).catch(function (err) {
+                console.error(err);
             });
+        });
     }, {onlyStream: true});
 </script>
