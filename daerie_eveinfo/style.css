@@ -1,0 +1,19 @@
+.eve-info-modal p {
+    text-align: justify;
+}
+
+.media .media-left, .media .media-right, .media .media-body {
+    display: table-cell;
+    vertical-align: top;
+}
+
+.media .media-object {
+    display: block;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 15px;
+}
+
+.media .media-body {
+    padding-left: 10px;
+}

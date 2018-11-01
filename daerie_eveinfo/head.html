@@ -1,0 +1,221 @@
+<script type="text/x-handlebars" data-template-name="modal/eve-info-modal">
+{{#d-modal-body title="eve_info_modal_title" class="eve-info-modal"}}
+<div class="media">
+    <div class="media-left">
+        {{#if model.character_id }}
+        <img class="media-object avatar" src="//image.eveonline.com/Character/{{ model.character_id }}_64.jpg" alt="{{ model.name }}">
+        {{/if}}
+        {{#if model.corporation_id }}
+        <img class="media-object avatar" src="//image.eveonline.com/Corporation/{{ model.corporation_id }}_64.png" alt="Corporation">
+        {{/if}}
+        {{#if model.alliance_id }}
+        <img class="media-object avatar" src="//image.eveonline.com/Alliance/{{ model.alliance_id }}_64.png" alt="Alliance">
+        {{/if}}
+    </div>
+    <div class="media-body">{{{ model.description }}}</div>
+</div>
+{{/d-modal-body}}
+<div class="modal-footer">
+  <div class="badge-section">
+    {{#if model.is_character}}
+    <span>
+        <a href="//seat.clandaerie.com/character/view/sheet/{{ model.entity_id }}" target="_blank">
+            <span class="user-badge">
+                <img src="//seat.clandaerie.com/web/img/favico/favicon-16x16.png" alt="SeAT" />
+                <span class="badge-display-name">SeAT</span>
+            </span>
+        </a>
+
+    </span>
+    <span>
+        <a href="//eveskillboard.com/pilot/{{ model.entity_alias }}" target="_blank">
+            <span class="user-badge">
+                <img src="//eveskillboard.com/images/favicon.ico" alt="EvE Skillboard" />
+                <span class="badge-display-name">Skillboard</span>
+            </span>
+        </a>
+    </span>
+    <span>
+        <a href="//forums.eveonline.com/u/{{ model.entity_alias }}/summary" target="_blank">
+            <span class="user-badge">
+                <img src="//web.ccpgamescdn.com/forums/img/eve_favicon.ico" alt="EvE Forum" />
+                <span class="badge-display-name">Forum</span>
+            </span>
+        </a>
+    </span>
+    <span>
+        <a href="//eve-search.com/search/author/{{ model.name }}" target="_blank">
+            <span class="user-badge">
+                <img src="//eve-search.com/favicon.ico" alt="EvE Search" />
+                <span class="badge-display-name">EvE Search</span>
+            </span>
+        </a>
+    </span>
+    <span>
+        <a href="//evewho.com/pilot/{{ model.name }}" target="_blank">
+            <span class="user-badge">
+                <img src="//evewho.com/favicon.ico" alt="EvE Who" />
+                <span class="badge-display-name">EvE Who</span>
+            </span>
+        </a>
+    </span>
+    <span>
+        <a href="//zkillboard.com/character/{{ model.entity_id }}" target="_blank">
+            <span class="user-badge">
+                <img src="//zkillboard.com/favicon.ico" alt="zKillboard" />
+                <span class="badge-display-name">zKillboard</span>
+            </span>
+        </a>
+    </span>
+    <span>
+        <a href="http://eve-prism.com/?view=character&name={{ model.name }}" target="_blank">
+            <span class="user-badge">
+                <img src="//eve-prism.com/media/favicon.ico" alt="EvE Prism" />
+                <span class="badge-display-name">EvE Prism</span>
+            </span>
+        </a>
+    </span>
+    {{/if}}
+    {{#if model.is_corporation }}
+    <span>
+        <a href="//seat.clandaerie.com/corporation/view/summary/{{ model.entity_id }}" target="_blank">
+            <span class="user-badge">
+                <img src="//seat.clandaerie.com/web/img/favico/favicon-16x16.png" alt="SeAT" />
+                <span class="badge-display-name">SeAT</span>
+            </span>
+        </a>
+
+    </span>
+    <span>
+        <a href="//evewho.com/corp/{{ model.name }}" target="_blank">
+            <span class="user-badge">
+                <img src="//evewho.com/favicon.ico" alt="EvE Who" />
+                <span class="badge-display-name">EvE Who</span>
+            </span>
+        </a>
+    </span>
+    <span>
+        <a href="//zkillboard.com/corporation/{{ model.entity_id }}" target="_blank">
+            <span class="user-badge">
+                <img src="//zkillboard.com/favicon.ico" alt="zKillboard" />
+                <span class="badge-display-name">zKillboard</span>
+            </span>
+        </a>
+    </span>
+    <span>
+        <a href="http://eve-prism.com/?view=corporation&name={{ model.name }}" target="_blank">
+            <span class="user-badge">
+                <img src="//eve-prism.com/media/favicon.ico" alt="EvE Prism" />
+                <span class="badge-display-name">EvE Prism</span>
+            </span>
+        </a>
+    </span>
+    {{/if}}
+    {{#if model.is_alliance }}
+    <span>
+        <a href="//evewho.com/alli/{{ model.name }}" target="_blank">
+            <span class="user-badge">
+                <img src="//evewho.com/favicon.ico" alt="EvE Who" />
+                <span class="badge-display-name">EvE Who</span>
+            </span>
+        </a>
+    </span>
+    <span>
+        <a href="//zkillboard.com/alliance/{{ model.entity_id }}" target="_blank">
+            <span class="user-badge">
+                <img src="//zkillboard.com/favicon.ico" alt="zKillboard" />
+                <span class="badge-display-name">zKillboard</span>
+            </span>
+        </a>
+    </span>
+    <span>
+        <a href="http://eve-prism.com/?view=alliance&name={{ model.name }}" target="_blank">
+            <span class="user-badge">
+                <img src="//eve-prism.com/media/favicon.ico" alt="EvE Prism" />
+                <span class="badge-display-name">EvE Prism</span>
+            </span>
+        </a>
+    </span>
+    {{/if}}
+  </div>
+</div>
+</script>
+<script type="text/discourse-plugin" version="0.8.24">
+    const ESI_BASE_URI = 'https://esi.evetech.net';
+    const showModal = require('discourse/lib/show-modal').default;
+    let currentLocale = I18n.currentLocale();
+
+    api.decorateCooked(function (cooked) {
+        var infoNames = [];
+        cooked.find('a[href="#eveinfo"]').each(function (index, entity) {
+            infoNames.push($(entity).text());
+        });
+
+        cooked.find('a[href="#eveinfo"]').on('click', function(){
+            var entity = {
+                type: $(this).attr('data-type'),
+                id: $(this).attr('data-id')
+            };
+
+            if (['alliances', 'corporations', 'characters'].indexOf(entity.type) >= 0) {
+                $.ajax({
+                    headers: {
+                        'X-User-Agent': 'discourse/1.0.0 (Warlof Tutsimo - Daerie Inc. - Get Off My Lawn)'
+                    },
+                    type: 'GET',
+                    url: ESI_BASE_URI + '/latest/' + entity.type + '/' + entity.id + '/',
+                    dataType: 'json'
+                }).done(function(data){
+                    I18n.translations[currentLocale].js.eve_info_modal_title = data.name;
+                    data.entity_type  = entity.type;
+                    data.entity_id    = entity.id;
+                    data.entity_alias = data.name.replace(' ', '_');
+                    data.description  = (data.description ? data.description : '').replace(/<\/?font(?:.|\n)*?>/gmi, '')
+                        .replace(/<a href=showinfo:([0-9]+)>([éèàçù \w]+)<\/a>/gmi, function(match, p1, p2, offset, string) {
+                            return p2;
+                        });
+
+                    switch(entity.type) {
+                        case 'characters':
+                            data.is_character = true;
+                            data.character_id = entity.id;
+                            break;
+                        case 'corporations':
+                            data.is_corporation = true;
+                            data.corporation_id = entity.id;
+                            break;
+                        case 'alliances':
+                            data.is_alliance = true;
+                            data.alliance_id = entity.id;
+                            break;
+                    }
+
+                    showModal('eveInfoModal', {
+                        'model': data
+                    });
+                });
+            }
+        });
+
+        console.debug(infoNames);
+
+        $.ajax({
+            headers: {
+                'X-User-Agent': 'discourse/1.0.0 (Warlof Tutsimo - Daerie Inc. - Get Off My Lawn)'
+            },
+            type: 'POST',
+            url: ESI_BASE_URI + '/latest/universe/ids/',
+            data: JSON.stringify(infoNames),
+            dataType: 'json',
+            contentType: 'application/json; charset=utf-8'
+        }).done(function (data) {
+            for (var type in data) {
+                $(data[type]).each(function(index, entity) {
+                    cooked.find('a[href="#eveinfo"]:contains(' + entity.name + ')')
+                        .attr('data-type', type)
+                        .attr('data-id', entity.id);
+                });
+            }
+        });
+    }, {onlyStream: true})
+</script>

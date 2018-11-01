@@ -33,5 +33,8 @@ Info block will use your tertiary color.
 ## Daerie Eve SDE
 A small plugin allowing basic SDE and ESI information regarding an item to be displayed in a modal box using Markdown link notation `[Item Name](#evesde)`
 
+## Daerie Eve Info
+A small plugin allowing ESI information regarding an entity (character,corporation or alliance) to be displayed in a modal box using Markdown link notation `[Entity Name](#eveinfo)`
+
 # Where they are used
  - [Clan Daerie](https://forums.clandaerie.com)
