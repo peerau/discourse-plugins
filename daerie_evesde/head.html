@@ -63,7 +63,7 @@
 <script type="text/x-handlebars" data-template-name="modal/eve-sde-modal">
     {{#d-modal-body title="eve_sde_modal_title" class="eve-sde-modal"}}
     <p data-typeid="{{ model.type_id }}">{{{ model.description }}}</p>
-    {{#if model.attributes.shield or model.attributes.armor or model.attributes.hull }}
+    {{#if (or model.attributes.shield model.attributes.armor model.attributes.hull)}}
     <table>
         <thead>
             <tr>
